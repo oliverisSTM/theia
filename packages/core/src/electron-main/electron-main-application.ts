@@ -391,18 +391,28 @@ export class ElectronMainApplication {
                 this.processArgv.getProcessArgvWithoutBin(),
                 await this.getForkOptions(),
             );
+            // Should be true by default, but `.pid` might be undefined if an error occured.
+            let backendProcessRunning = typeof backendProcess.pid === 'number';
             return new Promise((resolve, reject) => {
                 // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
                 backendProcess.on('message', (address: AddressInfo) => {
                     resolve(address.port);
                 });
                 backendProcess.on('error', error => {
+                    backendProcessRunning = false;
                     reject(error);
                 });
+                backendProcess.on('exit', (code, signal) => {
+                    backendProcessRunning = false;
+                    console.warn(`backend process (pid: ${backendProcess.pid}) exited with ${typeof code === 'number' ? code : signal}`);
+                });
                 app.on('quit', () => {
-                    // If we forked the process for the clusters, we need to manually terminate it.
-                    // See: https://github.com/eclipse-theia/theia/issues/835
-                    process.kill(backendProcess.pid);
+                    // Only kill backend if it is running:
+                    if (backendProcessRunning) {
+                        // If we forked the process for the clusters, we need to manually terminate it.
+                        // See: https://github.com/eclipse-theia/theia/issues/835
+                        process.kill(backendProcess.pid);
+                    }
                 });
             });
         }

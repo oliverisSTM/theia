@@ -374,6 +374,7 @@ export class HostedPluginSupport {
     }
 
     protected async startPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
+        console.error('============ start plugins ======== ');
         let started = 0;
         const startPluginsMeasurement = this.createMeasurement('startPlugins');
 
@@ -514,12 +515,17 @@ export class HostedPluginSupport {
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {
+        console.error('==== getHostGlobalStoragePath ==== ');
         const configDirUri = await this.envServer.getConfigDirUri();
         const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage');
+        console.error('==== getHostGlobalStoragePath ==== path ', globalStorageFolderUri.toString());
 
         // Make sure that folder by the path exists
         if (!await this.fileService.exists(globalStorageFolderUri)) {
+            console.error('==== getHostGlobalStoragePath ==== NOT EXIST === create ', globalStorageFolderUri.toString());
             await this.fileService.createFolder(globalStorageFolderUri);
+        } else {
+            console.error('==== getHostGlobalStoragePath ==== EXIST ', globalStorageFolderUri.toString());
         }
         const globalStorageFolderFsPath = await this.fileService.fsPath(globalStorageFolderUri);
         if (!globalStorageFolderFsPath) {
